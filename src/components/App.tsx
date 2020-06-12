@@ -34,7 +34,7 @@ class App extends React.Component {
   }
 
   drawVideoCanvas = () => {
-    this.localVideoEffectors!.doEffect(960,640)
+    this.localVideoEffectors!.doEffect(480,320)
     if (this.localCanvasRef.current !== null) {
       if (this.localVideoEffectors!.outputWidth !== 0 && this.localVideoEffectors!.outputHeight !== 0) {
         this.localCanvasRef.current.height = (this.localCanvasRef.current.width / this.localVideoEffectors!.outputWidth) * this.localVideoEffectors!.outputHeight
