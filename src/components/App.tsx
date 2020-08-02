@@ -30,8 +30,10 @@ class App extends React.Component {
     this.localVideoEffectors.virtualBackgroundEnabled   = true
     this.localVideoEffectors.virtualBackgroundImagePath = "/resources/vbg/pic1.jpg"
     this.localVideoEffectors.maskBlurAmount             = blur
+    this.localVideoEffectors.canny                      = false
     this.localVideoEffectors.selectInputVideoDevice("").then(() => {
-      requestAnimationFrame(() => this.drawVideoCanvas())
+      //requestAnimationFrame(() => this.drawVideoCanvas())
+      setTimeout(this.drawVideoCanvas, 100);
     })
   }
 
@@ -62,7 +64,9 @@ class App extends React.Component {
     const elapsedStr = elapsed.toFixed(3);
     //console.log(`DRAWING: ${elapsedStr} ms`);
     this.exit  = performance.now();
-    requestAnimationFrame(() => this.drawVideoCanvas())
+    //requestAnimationFrame(() => this.drawVideoCanvas())
+    setTimeout(this.drawVideoCanvas, 100);
+
   }
 
 
