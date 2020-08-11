@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, abort
 import logging
 import ssl
 import json, os, sys, glob
+import argparse
 
 #######################
 #### Utilities ########
@@ -11,6 +12,17 @@ app = Flask(__name__, static_folder='./build/', static_url_path="/")
 
 #app = Flask(__name__, static_folder='./public/')
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--local', type=int, help='... ')
+    args = parser.parse_args()
+
+    if args.local == None:
+        heroku = True
+    else:
+        heroku = False
+
+
     print(app.url_map)
     print('start')
     files = glob.glob('./*')
@@ -20,7 +32,6 @@ if __name__ == '__main__':
 
     port = int(os.environ.get("PORT", 38888))
 
-    heroku = True
     if heroku == True:
         app.run(host='0.0.0.0', port=port)
     else:

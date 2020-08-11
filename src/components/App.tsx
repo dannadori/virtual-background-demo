@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { LocalVideoEffectors, ModelConfigMobileNetV1, ModelConfigResNet } from 'local-video-effector'
+import { LocalVideoEffectors, ModelConfigMobileNetV1, ModelConfigResNet, ModelConfigMobileNetV1_05 } from 'local-video-effector'
 
 
 /**
@@ -15,6 +15,8 @@ class App extends React.Component {
     let blur = 0
     if(model === 'MobileNetV1'){
       this.localVideoEffectors = new LocalVideoEffectors(ModelConfigMobileNetV1)
+    }else if (model === 'MobileNetV1_05'){
+      this.localVideoEffectors = new LocalVideoEffectors(ModelConfigMobileNetV1_05)
     }else if (model === 'ResNet'){
       this.localVideoEffectors = new LocalVideoEffectors(ModelConfigResNet)
     }else{
@@ -32,8 +34,8 @@ class App extends React.Component {
     this.localVideoEffectors.maskBlurAmount             = blur
     this.localVideoEffectors.canny                      = false
     this.localVideoEffectors.selectInputVideoDevice("").then(() => {
-      //requestAnimationFrame(() => this.drawVideoCanvas())
-      setTimeout(this.drawVideoCanvas, 100);
+      requestAnimationFrame(() => this.drawVideoCanvas())
+      //setTimeout(this.drawVideoCanvas, 100);
     })
   }
 
@@ -64,8 +66,8 @@ class App extends React.Component {
     const elapsedStr = elapsed.toFixed(3);
     //console.log(`DRAWING: ${elapsedStr} ms`);
     this.exit  = performance.now();
-    //requestAnimationFrame(() => this.drawVideoCanvas())
-    setTimeout(this.drawVideoCanvas, 100);
+    requestAnimationFrame(() => this.drawVideoCanvas())
+    //setTimeout(this.drawVideoCanvas, 100);
 
   }
 
