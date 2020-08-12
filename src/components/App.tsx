@@ -8,8 +8,14 @@ import { LocalVideoEffectors, ModelConfigMobileNetV1, ModelConfigResNet, ModelCo
 class App extends React.Component {
 
   localCanvasRef = React.createRef<HTMLCanvasElement>()
+  localVideoRef  = React.createRef<HTMLVideoElement>()
   localVideoEffectors : LocalVideoEffectors|null =null
+
+  isIPhone = false
+
   componentDidMount() {
+
+
     const model = new URL(window.location.href).searchParams.get('model');
     const blurString = new URL(window.location.href).searchParams.get('blur')
     let blur = 0
@@ -34,6 +40,10 @@ class App extends React.Component {
     this.localVideoEffectors.maskBlurAmount             = blur
     this.localVideoEffectors.canny                      = false
     this.localVideoEffectors.selectInputVideoDevice("").then(() => {
+      this.media = this.localVideoEffectors!.getMediaStream()
+      this.status = "get media"
+      console.log(""+this.media)
+//      this.setState({})
       requestAnimationFrame(() => this.drawVideoCanvas())
       //setTimeout(this.drawVideoCanvas, 100);
     })
@@ -72,12 +82,53 @@ class App extends React.Component {
   }
 
 
+
+  media:MediaStream|null = null
+  status = "status1"
   render() {
-    return (
-      <div style={{ width: "480px", margin: "auto" }}>
-        <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "480px", margin: "auto" }} />
-      </div>
-    )
+    if(navigator.userAgent.indexOf("iPhone") >= 0){
+      this.isIPhone = true
+    }
+
+    if(this.isIPhone===false){
+      return (
+        <div style={{ width: "480px", margin: "auto" }}>
+          <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "480px", margin: "auto" }} />
+        </div>
+      )
+    }else{
+      return (
+        <div style={{ width: "480px", margin: "auto" }}>
+          <video ref={this.localVideoRef} style={{ display: "block", width: "480px", margin: "auto" }} playsInline />
+          <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "480px", margin: "auto" }} />
+          <input type="button" value="start" onClick={(e)=>{
+
+
+            navigator.mediaDevices.getUserMedia({              
+              audio: false,
+              video: { 
+                // deviceId: deviceId,
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            }).then(stream => {
+              if (stream !== null) {
+                this.localVideoRef.current!.srcObject = stream
+                this.localVideoRef.current!.play()
+                return new Promise((resolve, reject) => {
+                  this.localVideoRef.current!.onloadedmetadata = () => {
+                    resolve();
+                  };
+                });
+              }
+            })
+            this.localVideoEffectors!.setVideoElement(this.localVideoRef.current!)
+          }}
+          />
+        </div>
+      )
+
+    }
   }
 }
 
