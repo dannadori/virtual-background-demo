@@ -1,18 +1,50 @@
 import * as React from 'react';
 import { LocalVideoEffectors, ModelConfigMobileNetV1, ModelConfigResNet, ModelConfigMobileNetV1_05 } from 'local-video-effector'
-
+import { Icon, Label, List, Accordion } from 'semantic-ui-react';
 
 /**
  * Main Component
  */
+
+
+export enum ForegroundSize{
+  Full,
+  Large,
+  Small,
+}
+export enum ForegroundPosition{
+  BottomLeft,
+  BottomRight,
+}
+
+
+export interface AppState {
+  foregroundSizeChange : boolean,
+  foregroundSize       : ForegroundSize,
+  foregroundPosition   : ForegroundPosition,
+}
+
+
 class App extends React.Component {
+  state: AppState = {
+    foregroundSizeChange : false,
+    foregroundSize       : ForegroundSize.Small,
+    foregroundPosition   : ForegroundPosition.BottomRight,
+  }
+
 
   localCanvasRef = React.createRef<HTMLCanvasElement>()
   localVideoRef  = React.createRef<HTMLVideoElement>()
-  localVideoEffectors : LocalVideoEffectors|null =null
+  localVideoEffectors : LocalVideoEffectors|null = null
+  fileInputRef      = React.createRef<HTMLInputElement>()
+  shareVideoElementRef =  React.createRef<HTMLVideoElement>()
+
+  monitorCanvasRef = React.createRef<HTMLCanvasElement>()
 
   isIPhone = false
+  imageCapture:any
 
+  private virtualBGImage        = document.createElement("img")
   componentDidMount() {
 
 
@@ -36,14 +68,14 @@ class App extends React.Component {
 
     this.localVideoEffectors.cameraEnabled              = true
     this.localVideoEffectors.virtualBackgroundEnabled   = true
-    this.localVideoEffectors.virtualBackgroundImagePath = "/resources/vbg/pic1.jpg"
+//    this.localVideoEffectors.virtualBackgroundImagePath = "./resources/vbg/pic1.jpg"
+    this.virtualBGImage.src = "/resources/vbg/pic1.jpg"
+    this.localVideoEffectors.virtualBackgroundImageElement = this.virtualBGImage
     this.localVideoEffectors.maskBlurAmount             = blur
     this.localVideoEffectors.canny                      = false
+    this.localVideoEffectors.monitorCanvas              = this.monitorCanvasRef.current!
     this.localVideoEffectors.selectInputVideoDevice("").then(() => {
       this.media = this.localVideoEffectors!.getMediaStream()
-      this.status = "get media"
-      console.log(""+this.media)
-//      this.setState({})
       requestAnimationFrame(() => this.drawVideoCanvas())
       //setTimeout(this.drawVideoCanvas, 100);
     })
@@ -52,7 +84,7 @@ class App extends React.Component {
   enter:number=0
   exit:number=0
   // interval is longer when portrait than when landscape. I don't know the reason...
-  drawVideoCanvas = () => {
+  drawVideoCanvas = async () => {
     this.enter  = performance.now();
     const interval = (this.enter - this.exit);
     const intervalStr = interval.toFixed(3);
@@ -76,6 +108,7 @@ class App extends React.Component {
     const elapsedStr = elapsed.toFixed(3);
     //console.log(`DRAWING: ${elapsedStr} ms`);
     this.exit  = performance.now();
+
     requestAnimationFrame(() => this.drawVideoCanvas())
     //setTimeout(this.drawVideoCanvas, 100);
 
@@ -83,27 +116,141 @@ class App extends React.Component {
 
 
 
+  setBGImage = () => {
+    this.localVideoEffectors!.virtualBackgroundImageElement = this.virtualBGImage
+    this.setState({foregroundSizeChange: false})
+    this.shareVideoElementRef.current!.pause()
+  }
+
+  // For SharedDisplay
+  sharedDisplaySelected = () => {
+    //gs.meetingSession!.audioVideo.startContentShareFromScreenCapture()
+    const streamConstraints = {
+        // frameRate: {
+        //     max: 15,
+        // },
+    }
+    // @ts-ignore https://github.com/microsoft/TypeScript/issues/31821
+    navigator.mediaDevices.getDisplayMedia().then(media => {
+      this.localVideoEffectors!.virtualBackgroundStream = media
+      this.setState({foregroundSizeChange: true})
+      this.shareVideoElementRef.current!.pause()
+    })
+  }
+
+
+  // For SharedVideo
+  sharedVideoSelected = (e: any) => {
+    const path = URL.createObjectURL(e.target.files[0]);
+    console.log(path)
+    this.shareVideoElementRef.current!.src = path
+    this.shareVideoElementRef.current!.play()
+
+    setTimeout(
+        async () => {
+            // @ts-ignore
+            const mediaStream: MediaStream = await this.shareVideoElementRef.current!.captureStream()
+            this.localVideoEffectors!.virtualBackgroundStream = mediaStream
+            this.setState({foregroundSizeChange: true})
+          }
+        , 3000); // I don't know but we need some seconds to restart video share....
+    }
+
+  
+
+
   media:MediaStream|null = null
-  status = "status1"
   render() {
     if(navigator.userAgent.indexOf("iPhone") >= 0){
       this.isIPhone = true
     }
 
     if(this.isIPhone===false){
+
+      if(this.state.foregroundSizeChange === false){
+        this.localVideoEffectors?.setForegroundPosition(0.0, 0.0, 1, 1)
+      }else if(this.state.foregroundSize === ForegroundSize.Large){
+        if(this.state.foregroundPosition === ForegroundPosition.BottomLeft){
+          this.localVideoEffectors?.setForegroundPosition(0.0, 0.4, 0.6, 0.6)
+        }else{
+          this.localVideoEffectors?.setForegroundPosition(0.4, 0.4, 0.6, 0.6)
+        }
+      }else if (this.state.foregroundSize === ForegroundSize.Small){
+        if(this.state.foregroundPosition === ForegroundPosition.BottomLeft){
+          this.localVideoEffectors?.setForegroundPosition(0.0, 0.7, 0.3, 0.3)
+        }else{
+          this.localVideoEffectors?.setForegroundPosition(0.7, 0.7, 0.3, 0.3)
+        }
+      }
+
+
       return (
-        <div style={{ width: "480px", margin: "auto" }}>
-          <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "480px", margin: "auto" }} />
+        <div style={{ width: "1280px", margin: "auto" }}>
+          <video ref={this.shareVideoElementRef} width="1280px" style={{ display: "none", width: "1280px", margin: "auto" }} playsInline />
+          <canvas ref={this.localCanvasRef}  width="1280px"  style={{ display: "block", width: "1280px", margin: "auto" }} />
+
+          <div style={{paddingLeft:"10px"}}>
+            <Label as="a" onClick={() => { this.setBGImage() }}>
+              <Icon name="image outline" size="large"/>
+              Image
+            </Label>
+
+            <Label as="a" onClick={() => { this.sharedDisplaySelected()}}>
+              <Icon name="share square outline" size="large"/>
+              screen
+            </Label>
+
+            <Label as="a" onClick={() => this.fileInputRef.current!.click()} >
+              <Icon name="play" size="large"/>
+              movie
+            </Label>
+
+            <input
+                ref={this.fileInputRef}
+                type="file"
+                hidden
+                onChange={(e) => this.sharedVideoSelected(e)}
+            />            
+
+            <Label as="a" onClick={() => { this.localVideoEffectors!.canny = !this.localVideoEffectors!.canny }} >
+              <Icon name="chess board" size="large"/>
+              canny
+            </Label> 
+
+          </div>          
+
+          <div style={{paddingLeft:"10px"}}>
+            <Icon basic link name="long arrow alternate left"  size="large"
+                onClick={() => { 
+                  this.setState({foregroundPosition: ForegroundPosition.BottomLeft})}
+                }
+            />
+            <Icon basic link name="long arrow alternate right"  size="large"
+                onClick={() => {
+                  this.setState({foregroundPosition: ForegroundPosition.BottomRight})}
+                }
+            />
+            <Icon basic link name="expand"  size="large"
+                onClick={() => {
+                  this.setState({foregroundSize: ForegroundSize.Large})}
+                }
+            />
+            <Icon basic link name="compress"  size="large"
+                onClick={() => {
+                  this.setState({foregroundSize: ForegroundSize.Small})}
+                }
+            />
+          </div>
+          <canvas ref={this.monitorCanvasRef}  width="720px" height="540px" style={{ display: "block", width: "1280px", margin: "auto" }} />
+          
         </div>
       )
     }else{
       return (
-        <div style={{ width: "480px", margin: "auto" }}>
-          <video ref={this.localVideoRef} style={{ display: "block", width: "480px", margin: "auto" }} playsInline />
-          <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "480px", margin: "auto" }} />
+        <div style={{ width: "720px", margin: "auto" }}>
+          <video ref={this.localVideoRef} style={{ display: "block", width: "720px", margin: "auto" }} playsInline />
+          <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "720px", margin: "auto" }} />
           <input type="button" value="start" onClick={(e)=>{
-
-
             navigator.mediaDevices.getUserMedia({              
               audio: false,
               video: { 
