@@ -238,7 +238,7 @@ class App extends React.Component {
                 }
             />
           </div>
-          <canvas ref={this.monitorCanvasRef}  width="720px" height="540px" style={{ display: "block", width: "1280px", margin: "auto" }} />
+          {/* <canvas ref={this.monitorCanvasRef}  width="720px" height="540px" style={{ display: "block", width: "1280px", margin: "auto" }} /> */}
           
         </div>
       )
