@@ -69,7 +69,7 @@ class App extends React.Component {
     this.localVideoEffectors.cameraEnabled              = true
     this.localVideoEffectors.virtualBackgroundEnabled   = true
 //    this.localVideoEffectors.virtualBackgroundImagePath = "./resources/vbg/pic1.jpg"
-    this.virtualBGImage.src = "/resources/vbg/pic1.jpg"
+    this.virtualBGImage.src = "./resources/vbg/pic1.jpg"
     this.localVideoEffectors.virtualBackgroundImageElement = this.virtualBGImage
     this.localVideoEffectors.maskBlurAmount             = blur
     this.localVideoEffectors.canny                      = false
@@ -115,7 +115,6 @@ class App extends React.Component {
   }
 
 
-
   setBGImage = () => {
     this.localVideoEffectors!.virtualBackgroundImageElement = this.virtualBGImage
     this.setState({foregroundSizeChange: false})
@@ -124,7 +123,6 @@ class App extends React.Component {
 
   // For SharedDisplay
   sharedDisplaySelected = () => {
-    //gs.meetingSession!.audioVideo.startContentShareFromScreenCapture()
     const streamConstraints = {
         // frameRate: {
         //     max: 15,
@@ -138,7 +136,6 @@ class App extends React.Component {
     })
   }
 
-
   // For SharedVideo
   sharedVideoSelected = (e: any) => {
     const path = URL.createObjectURL(e.target.files[0]);
@@ -147,14 +144,14 @@ class App extends React.Component {
     this.shareVideoElementRef.current!.play()
 
     setTimeout(
-        async () => {
-            // @ts-ignore
-            const mediaStream: MediaStream = await this.shareVideoElementRef.current!.captureStream()
-            this.localVideoEffectors!.virtualBackgroundStream = mediaStream
-            this.setState({foregroundSizeChange: true})
-          }
-        , 3000); // I don't know but we need some seconds to restart video share....
-    }
+      async () => {
+          // @ts-ignore
+          const mediaStream: MediaStream = await this.shareVideoElementRef.current!.captureStream()
+          this.localVideoEffectors!.virtualBackgroundStream = mediaStream
+          this.setState({foregroundSizeChange: true})
+        }
+      , 3000); // I don't know but we need some seconds to restart video share....
+  }
 
   
 
