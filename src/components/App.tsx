@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { LocalVideoEffectors, ModelConfigMobileNetV1, ModelConfigResNet, ModelConfigMobileNetV1_05 } from 'local-video-effector'
+import { LocalVideoEffectors, ModelConfigMobileNetV1, ModelConfigResNet, ModelConfigMobileNetV1_05, ForegroundType } from 'local-video-effector'
 import { Icon, Label, List, Accordion } from 'semantic-ui-react';
 
 /**
@@ -28,7 +28,7 @@ export interface AppState {
 class App extends React.Component {
   state: AppState = {
     foregroundSizeChange : false,
-    foregroundSize       : ForegroundSize.Small,
+    foregroundSize       : ForegroundSize.Full,
     foregroundPosition   : ForegroundPosition.BottomRight,
   }
 
@@ -67,12 +67,11 @@ class App extends React.Component {
     }
 
     this.localVideoEffectors.cameraEnabled              = true
-    this.localVideoEffectors.virtualBackgroundEnabled   = true
+    this.localVideoEffectors.virtualBackgroundEnabled   = false
 //    this.localVideoEffectors.virtualBackgroundImagePath = "./resources/vbg/pic1.jpg"
     this.virtualBGImage.src = "./resources/vbg/pic1.jpg"
     this.localVideoEffectors.virtualBackgroundImageElement = this.virtualBGImage
     this.localVideoEffectors.maskBlurAmount             = blur
-    this.localVideoEffectors.canny                      = false
     this.localVideoEffectors.monitorCanvas              = this.monitorCanvasRef.current!
     this.localVideoEffectors.selectInputVideoDevice("").then(() => {
       this.media = this.localVideoEffectors!.getMediaStream()
@@ -90,7 +89,6 @@ class App extends React.Component {
     const intervalStr = interval.toFixed(3);
     //console.log(`call: ${intervalStr} ms`);
     const start = performance.now();
-
 
     if (this.localCanvasRef.current !== null) {
       const width  = 480
@@ -114,15 +112,20 @@ class App extends React.Component {
 
   }
 
-
+  unsetBGImage = () =>{
+    this.localVideoEffectors!.virtualBackgroundEnabled   = false
+  }
   setBGImage = () => {
+    this.localVideoEffectors!.virtualBackgroundEnabled   = true
     this.localVideoEffectors!.virtualBackgroundImageElement = this.virtualBGImage
-    this.setState({foregroundSizeChange: false})
+    this.setState({foregroundSizeChange: true})
+    // this.setState({foregroundSizeChange: false})
     this.shareVideoElementRef.current!.pause()
   }
 
   // For SharedDisplay
   sharedDisplaySelected = () => {
+    this.localVideoEffectors!.virtualBackgroundEnabled   = true
     const streamConstraints = {
         // frameRate: {
         //     max: 15,
@@ -138,6 +141,7 @@ class App extends React.Component {
 
   // For SharedVideo
   sharedVideoSelected = (e: any) => {
+    this.localVideoEffectors!.virtualBackgroundEnabled   = true
     const path = URL.createObjectURL(e.target.files[0]);
     console.log(path)
     this.shareVideoElementRef.current!.src = path
@@ -164,7 +168,7 @@ class App extends React.Component {
 
     if(this.isIPhone===false){
 
-      if(this.state.foregroundSizeChange === false){
+      if(this.state.foregroundSize === ForegroundSize.Full){
         this.localVideoEffectors?.setForegroundPosition(0.0, 0.0, 1, 1)
       }else if(this.state.foregroundSize === ForegroundSize.Large){
         if(this.state.foregroundPosition === ForegroundPosition.BottomLeft){
@@ -187,6 +191,11 @@ class App extends React.Component {
           <canvas ref={this.localCanvasRef}  width="1280px"  style={{ display: "block", width: "1280px", margin: "auto" }} />
 
           <div style={{paddingLeft:"10px"}}>
+            <Label as="a" onClick={() => { this.unsetBGImage() }}>
+              <Icon name="share square outline" size="large"/>
+              NoVBG
+            </Label>
+
             <Label as="a" onClick={() => { this.setBGImage() }}>
               <Icon name="image outline" size="large"/>
               Image
@@ -209,9 +218,23 @@ class App extends React.Component {
                 onChange={(e) => this.sharedVideoSelected(e)}
             />            
 
-            <Label as="a" onClick={() => { this.localVideoEffectors!.canny = !this.localVideoEffectors!.canny }} >
+            <Label as="a" onClick={() => { 
+              this.localVideoEffectors!.foregroundType = ForegroundType.NONE
+              }} >
+              <Icon name="chess board" size="large"/>
+              none
+            </Label> 
+            <Label as="a" onClick={() => { 
+              this.localVideoEffectors!.foregroundType = ForegroundType.Canny
+              }} >
               <Icon name="chess board" size="large"/>
               canny
+            </Label> 
+            <Label as="a" onClick={() => { 
+              this.localVideoEffectors!.foregroundType = ForegroundType.Ascii
+              }} >
+              <Icon name="chess board" size="large"/>
+              ascii
             </Label> 
 
           </div>          
@@ -227,6 +250,11 @@ class App extends React.Component {
                   this.setState({foregroundPosition: ForegroundPosition.BottomRight})}
                 }
             />
+            <Icon basic link name="square outline"  size="large"
+                onClick={() => {
+                  this.setState({foregroundSize: ForegroundSize.Full})}
+                }
+            />
             <Icon basic link name="expand"  size="large"
                 onClick={() => {
                   this.setState({foregroundSize: ForegroundSize.Large})}
@@ -239,7 +267,11 @@ class App extends React.Component {
             />
           </div>
           {/* <canvas ref={this.monitorCanvasRef}  width="720px" height="540px" style={{ display: "block", width: "1280px", margin: "auto" }} /> */}
-          
+          <div>
+            <a href="https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme">github</a>
+            <br/>
+            <a href="https://www.npmjs.com/package/local-video-effector">npm</a>
+          </div>
         </div>
       )
     }else{
@@ -269,7 +301,14 @@ class App extends React.Component {
             this.localVideoEffectors!.setVideoElement(this.localVideoRef.current!)
           }}
           />
+          <div>
+            <a href="https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme">github</a>
+            <br/>
+            <a href="https://www.npmjs.com/package/local-video-effector">npm</a>
+          </div>
         </div>
+
+
       )
 
     }
