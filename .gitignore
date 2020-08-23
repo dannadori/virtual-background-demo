@@ -1,4 +1,8 @@
 node_modules/
 package-lock.json
+sync.sh
+server.key
+server.crt
+
 *~
 *#
