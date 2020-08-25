@@ -166,7 +166,7 @@ class App extends React.Component {
       this.isIPhone = true
     }
 
-    if(this.isIPhone===false){
+    if(this.isIPhone===false || true){
 
       if(this.state.foregroundSize === ForegroundSize.Full){
         this.localVideoEffectors?.setForegroundPosition(0.0, 0.0, 1, 1)
@@ -187,8 +187,164 @@ class App extends React.Component {
 
       return (
         <div style={{ width: "1280px", margin: "auto" }}>
-          <video ref={this.shareVideoElementRef} width="1280px" style={{ display: "none", width: "1280px", margin: "auto" }} playsInline />
+          {
+            this.isIPhone? 
+            <video ref={this.localVideoRef} style={{ display: "block", width: "160px", margin: "auto" }} playsInline />
+            :
+            <video ref={this.shareVideoElementRef} width="1280px" style={{ display: "none", width: "1280px", margin: "auto" }} playsInline />
+          }
           <canvas ref={this.localCanvasRef}  width="1280px"  style={{ display: "block", width: "1280px", margin: "auto" }} />
+
+          <div style={{paddingLeft:"10px"}}>
+            <Label as="a" onClick={() => { this.unsetBGImage() }}>
+              <Icon name="share square outline" size="large"/>
+              NoVBG
+            </Label>
+
+            <Label as="a" onClick={() => { this.setBGImage() }}>
+              <Icon name="image outline" size="large"/>
+              Image
+            </Label>
+
+            {this.isIPhone?
+              <Label/>
+              :
+              <Label as="a" onClick={() => { this.sharedDisplaySelected()}}>
+                <Icon name="share square outline" size="large"/>
+                screen
+              </Label>
+            }
+            <Label as="a" onClick={() => this.fileInputRef.current!.click()} >
+              <Icon name="play" size="large"/>
+              movie
+            </Label>
+
+            <input
+                ref={this.fileInputRef}
+                type="file"
+                hidden
+                onChange={(e) => this.sharedVideoSelected(e)}
+            />            
+
+            <Label as="a" onClick={() => { 
+              this.localVideoEffectors!.foregroundType = ForegroundType.NONE
+              }} >
+              <Icon name="chess board" size="large"/>
+              none
+            </Label> 
+            <Label as="a" onClick={() => { 
+              this.localVideoEffectors!.foregroundType = ForegroundType.Canny
+              }} >
+              <Icon name="chess board" size="large"/>
+              canny
+            </Label> 
+            <Label as="a" onClick={() => { 
+              this.localVideoEffectors!.foregroundType = ForegroundType.Ascii
+              }} >
+              <Icon name="chess board" size="large"/>
+              ascii
+            </Label> 
+
+          </div>          
+
+          <div style={{paddingLeft:"10px"}}>
+            <Icon basic link name="long arrow alternate left"  size="large"
+                onClick={() => { 
+                  this.setState({foregroundPosition: ForegroundPosition.BottomLeft})}
+                }
+            />
+            <Icon basic link name="long arrow alternate right"  size="large"
+                onClick={() => {
+                  this.setState({foregroundPosition: ForegroundPosition.BottomRight})}
+                }
+            />
+            <Icon basic link name="square outline"  size="large"
+                onClick={() => {
+                  this.setState({foregroundSize: ForegroundSize.Full})}
+                }
+            />
+            <Icon basic link name="expand"  size="large"
+                onClick={() => {
+                  this.setState({foregroundSize: ForegroundSize.Large})}
+                }
+            />
+            <Icon basic link name="compress"  size="large"
+                onClick={() => {
+                  this.setState({foregroundSize: ForegroundSize.Small})}
+                }
+            />
+          </div>
+
+          {
+            this.isIPhone?
+            <input type="button" value="start" onClick={(e)=>{
+              navigator.mediaDevices.getUserMedia({              
+                audio: false,
+                video: { 
+                  // deviceId: deviceId,
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 }
+                }
+              }).then(stream => {
+                if (stream !== null) {
+                  this.localVideoRef.current!.srcObject = stream
+                  this.localVideoRef.current!.play()
+                  return new Promise((resolve, reject) => {
+                    this.localVideoRef.current!.onloadedmetadata = () => {
+                      resolve();
+                    };
+                  });
+                }
+              })
+              this.localVideoEffectors!.setVideoElement(this.localVideoRef.current!)
+            }}
+            />
+            :
+            <div/>
+
+          }
+
+
+
+          {/* <canvas ref={this.monitorCanvasRef}  width="720px" height="540px" style={{ display: "block", width: "1280px", margin: "auto" }} /> */}
+          <div>
+            <a href="https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme">github</a>
+            <br/>
+            <a href="https://www.npmjs.com/package/local-video-effector">npm</a>
+          </div>
+        </div>
+      )
+    }else{
+      return (
+        <div style={{ width: "720px", margin: "auto" }}>
+          {/* <video ref={this.localVideoRef} style={{ display: "block", width: "720px", margin: "auto" }} playsInline /> */}
+          <video ref={this.localVideoRef} style={{ display: "block", width: "160px", margin: "auto" }} playsInline />
+          <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "720px", margin: "auto" }} />
+          <input type="button" value="start" onClick={(e)=>{
+            navigator.mediaDevices.getUserMedia({              
+              audio: false,
+              video: { 
+                // deviceId: deviceId,
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            }).then(stream => {
+              if (stream !== null) {
+                this.localVideoRef.current!.srcObject = stream
+                this.localVideoRef.current!.play()
+                return new Promise((resolve, reject) => {
+                  this.localVideoRef.current!.onloadedmetadata = () => {
+                    resolve();
+                  };
+                });
+              }
+            })
+            this.localVideoEffectors!.setVideoElement(this.localVideoRef.current!)
+          }}
+          />
+
+
+
 
           <div style={{paddingLeft:"10px"}}>
             <Label as="a" onClick={() => { this.unsetBGImage() }}>
@@ -266,41 +422,7 @@ class App extends React.Component {
                 }
             />
           </div>
-          {/* <canvas ref={this.monitorCanvasRef}  width="720px" height="540px" style={{ display: "block", width: "1280px", margin: "auto" }} /> */}
-          <div>
-            <a href="https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme">github</a>
-            <br/>
-            <a href="https://www.npmjs.com/package/local-video-effector">npm</a>
-          </div>
-        </div>
-      )
-    }else{
-      return (
-        <div style={{ width: "720px", margin: "auto" }}>
-          <video ref={this.localVideoRef} style={{ display: "block", width: "720px", margin: "auto" }} playsInline />
-          <canvas ref={this.localCanvasRef}  style={{ display: "block", width: "720px", margin: "auto" }} />
-          <input type="button" value="start" onClick={(e)=>{
-            navigator.mediaDevices.getUserMedia({              
-              audio: false,
-              video: { 
-                // deviceId: deviceId,
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-              }
-            }).then(stream => {
-              if (stream !== null) {
-                this.localVideoRef.current!.srcObject = stream
-                this.localVideoRef.current!.play()
-                return new Promise((resolve, reject) => {
-                  this.localVideoRef.current!.onloadedmetadata = () => {
-                    resolve();
-                  };
-                });
-              }
-            })
-            this.localVideoEffectors!.setVideoElement(this.localVideoRef.current!)
-          }}
-          />
+
           <div>
             <a href="https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme">github</a>
             <br/>
