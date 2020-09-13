@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { LocalVideoEffectors, ModelConfigMobileNetV1, ModelConfigResNet, ModelConfigMobileNetV1_05, ForegroundType } from 'local-video-effector'
-import { Icon, Label, List, Accordion } from 'semantic-ui-react';
+import { LocalVideoEffectors, ModelConfigMobileNetV1, ModelConfigResNet, ModelConfigMobileNetV1_05, ForegroundType,
+  getDeviceLists } from 'local-video-effector'
+import { Icon, Label, Dropdown } from 'semantic-ui-react';
 
 /**
  * Main Component
@@ -22,6 +23,8 @@ export interface AppState {
   foregroundSizeChange : boolean,
   foregroundSize       : ForegroundSize,
   foregroundPosition   : ForegroundPosition,
+  selectedDeviceID     : string,
+  selectedResolution   : number,
 }
 
 
@@ -30,6 +33,8 @@ class App extends React.Component {
     foregroundSizeChange : false,
     foregroundSize       : ForegroundSize.Full,
     foregroundPosition   : ForegroundPosition.BottomRight,
+    selectedDeviceID     : "",
+    selectedResolution   : 720
   }
 
 
@@ -45,6 +50,10 @@ class App extends React.Component {
   imageCapture:any
 
   private virtualBGImage        = document.createElement("img")
+
+  private dropdownVideoInput:any = null
+  private dropdownVideoResolution:any = null
+
   componentDidMount() {
 
 
@@ -74,9 +83,47 @@ class App extends React.Component {
     this.localVideoEffectors.maskBlurAmount             = blur
     this.localVideoEffectors.monitorCanvas              = this.monitorCanvasRef.current!
     this.localVideoEffectors.selectInputVideoDevice("").then(() => {
-      this.media = this.localVideoEffectors!.getMediaStream()
+      // this.media = this.localVideoEffectors!.getMediaStream()
       requestAnimationFrame(() => this.drawVideoCanvas())
       //setTimeout(this.drawVideoCanvas, 100);
+    })
+
+    getDeviceLists().then((deviceLists)=>{
+      console.log("----------------",deviceLists)
+
+      // Video Input Selection
+      const videoInputList:any = []
+      deviceLists["videoinput"].map((videoInput)=>{
+        console.log("----------------", videoInput)
+        videoInputList.push({
+            key: videoInput.label,
+            text: videoInput.label,
+            value: videoInput.deviceId,
+        })
+      })
+      this.dropdownVideoInput = <Dropdown placeholder='State' search selection options={videoInputList} onChange={(e,v)=>{
+        this.setState({selectedDeviceID:v.value})
+        this.localVideoEffectors?.selectInputVideoDevice(v.value as string).then(() => {
+          // this.media = this.localVideoEffectors!.getMediaStream()
+        })        
+      }} />
+
+      // Video Resolution
+      const videoResolutionList:any = []
+      const reslist = [360, 540, 720, 1280]
+      reslist.map((videoResolution)=>{
+        videoResolutionList.push({
+            key: videoResolution+"p",
+            text: videoResolution+"p",
+            value: videoResolution,
+        })
+      })
+      this.dropdownVideoResolution = <Dropdown placeholder='State' search selection options={videoResolutionList} onChange={(e,v)=>{
+        this.setState({selectedResolution:v.value})
+      }} />
+      
+      this.setState({})
+      
     })
   }
 
@@ -91,7 +138,8 @@ class App extends React.Component {
     const start = performance.now();
 
     if (this.localCanvasRef.current !== null) {
-      const width  = 480
+      const width  = this.state.selectedResolution
+//      const width  = 480
       const height = (width / this.localCanvasRef.current.width ) * this.localCanvasRef.current.height
       this.localVideoEffectors!.doEffect(width,height)
 
@@ -124,19 +172,30 @@ class App extends React.Component {
   }
 
   // For SharedDisplay
-  sharedDisplaySelected = () => {
+  sharedDisplaySelected = async() => {
     this.localVideoEffectors!.virtualBackgroundEnabled   = true
     const streamConstraints = {
         // frameRate: {
         //     max: 15,
         // },
     }
+    // // @ts-ignore https://github.com/microsoft/TypeScript/issues/31821
+    // navigator.mediaDevices.getDisplayMedia().then(media => {
+    //   this.localVideoEffectors!.virtualBackgroundStream = media
+    //   this.setState({foregroundSizeChange: true})
+    //   this.shareVideoElementRef.current!.pause()
+    // })
+
+
+
     // @ts-ignore https://github.com/microsoft/TypeScript/issues/31821
-    navigator.mediaDevices.getDisplayMedia().then(media => {
-      this.localVideoEffectors!.virtualBackgroundStream = media
-      this.setState({foregroundSizeChange: true})
-      this.shareVideoElementRef.current!.pause()
-    })
+    const media = await navigator.mediaDevices.getDisplayMedia(
+      {video:true}
+    );
+    this.localVideoEffectors!.virtualBackgroundStream = media
+    this.setState({foregroundSizeChange: true})
+    this.shareVideoElementRef.current!.pause()
+
   }
 
   // For SharedVideo
@@ -160,7 +219,7 @@ class App extends React.Component {
   
 
 
-  media:MediaStream|null = null
+//  media:MediaStream|null = null
   render() {
     if(navigator.userAgent.indexOf("iPhone") >= 0){
       this.isIPhone = true
@@ -183,6 +242,7 @@ class App extends React.Component {
           this.localVideoEffectors?.setForegroundPosition(0.7, 0.7, 0.3, 0.3)
         }
       }
+
 
 
       return (
@@ -308,9 +368,23 @@ class App extends React.Component {
 
           {/* <canvas ref={this.monitorCanvasRef}  width="720px" height="540px" style={{ display: "block", width: "1280px", margin: "auto" }} /> */}
           <div>
-            <a href="https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme">github</a>
-            <br/>
-            <a href="https://www.npmjs.com/package/local-video-effector">npm</a>
+            <span style={{marginLeft:"10px"}}>
+            VideoSource{this.dropdownVideoInput} 
+            </span>
+            <span style={{marginLeft:"30px"}}>
+            VideoResolution{this.dropdownVideoResolution}
+            </span>
+          </div>
+          <div>
+            <span style={{marginLeft:"10px"}}>
+              <a href="https://www.flect.co.jp/">powered by FLECT, CO., LTD.</a>
+            </span>
+            <span style={{marginLeft:"30px"}}>
+              <a href="https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme">github</a>, 
+            </span>
+            <span style={{marginLeft:"30px"}}>
+              <a href="https://www.npmjs.com/package/local-video-effector">npm</a>,
+            </span>
           </div>
         </div>
       )
@@ -427,6 +501,8 @@ class App extends React.Component {
             <a href="https://github.com/FLECT-DEV-TEAM/LocalVideoEffector#readme">github</a>
             <br/>
             <a href="https://www.npmjs.com/package/local-video-effector">npm</a>
+            <br/>
+            <a href="https://www.flect.co.jp/">powered by FLECT, CO., LTD.</a>
           </div>
         </div>
 
